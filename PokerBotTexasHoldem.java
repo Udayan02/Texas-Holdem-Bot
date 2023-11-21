@@ -1,5 +1,9 @@
 import java.util.*;
 
+
+// THE CODE DOES NOT COMPILE YET, THERE ARE A FEW INCOMPLETE METHODS
+// ALSO, THE METHODS MIGHT NOT RUN CORRECTLY YET. IGNORE ALL OF THAT
+// AT LEAST FOR NOW.
 public class PokerBotTexasHoldem {
 	private final String[][] cardMatrix;
 	private int handScore;
