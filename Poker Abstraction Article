@@ -1,0 +1,4 @@
+For the CFR algorithm to work, we need to abstract the game of poker because it is too large to be analysed on its own.
+Here's the link to an article that helps in the same:
+
+https://aipokertutorial.com/game-abstractions/
