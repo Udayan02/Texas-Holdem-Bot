@@ -2,7 +2,7 @@ import java.util.*;
 
 public class PokerBotTexasHoldem {
 	private final String[][] cardMatrix;
-	int handScore;
+	private int handScore;
 	private List<Character> table;
 	private String[] hand;
 	
