@@ -1,0 +1,50 @@
+	What is an 'out': an out is a card that "completes" your hand, for example, you get
+	a straight on the turn or a flush on the turn or a full house on the river or even a
+	high-card pair on the turn/river.
+	
+	For example: if our hand is 5C 6S and the flop is 7D 8C AD, then we have 8 possible
+	outs: all four 4s and all four 9s, any one of which make a straight. A straight is
+	the highest possible winning hand we can go for on this table with our hand.
+	
+	If our hand is AH and KH and the flop is 5H JC 7H, then we only need one heart to get
+	a flush. Here, we have 9 possible outs: all the hearts other than A, K, 5, and 7.
+	
+	If our hand is AC and KC and the flop is 9 2 6 rainbow, then we know that not a lot of
+	players have struck gold on the flop because most players fold low cards like 6s and 9s.
+	So, technically, even if someone has a pocket pair, or a pair on the flop, we have 6 outs
+	3 aces and 3 kings.
+	
+	Outs to percentage using the 2x4 rule:
+	//////////////////////////////////////
+	If you want an out, and have till the river to get one (the first two examples), you
+	multiply the number of outs by 4 to get the %. However, if you have more than 8 outs, 
+	you subtract the difference of (number of outs - 8) from the original percentage
+	obtained by (number of outs * 4).
+	If we NEED an out by the turn, (3 same suits, 2 in hand, 1 on table, for example), we
+	multiply by 2 instead of 4.
+	So, for the first example, the out % is 8 * 4 = 32%
+	For the second example, the out % is 9 * 4 - (9 - 8) = 35%
+	For the third example, the out % is 6 * 4 = 24%
+	
+	
+	EXPECTED VALUE:
+	///////////////
+	Expected Value is basically a mathematical term for: In the long run, this play is
+	expected to net me X amount of money.
+	+EV: a play is expected to be profitable in the long run.
+	-EV: a play is expected to lose money in the long run.
+					   ------------------------------
+					   | EV = (%W * $W) - (%L * $L) |
+					   ------------------------------
+	where %W is the percentage of times our hand will win,
+	$W is the amount of money we earn if our hand wins,
+	%L is the percentage of times our hand will lose, and
+	$L is the money we will lose if our hand loses.
+	For example, if we play a coin game where we earn $3 every time it lands heads,
+	and we lose $1 every time it lands tails, our EV is (0.5 * 3) - (0.5 * 1) = 1
+	Since our EV is 1, +ve, we earn profits in the long run. That is, if we play a
+	a million times, we should earn in the ballpark of a million dollars.
+	In Poker, we use "Equity" for determining our winning (and thus, losing) percents.
+	
+	Hand Equity (or pot equity): the percentage probability of winning the pot at any
+									given point of the han
