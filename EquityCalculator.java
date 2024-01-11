@@ -1,16 +1,17 @@
 import java.util.*;
 
-
-/////////
-// THIS VERSION COMPILES BUT RUNS WITH A FEW BUGS
-////////
+///////////
+// CODE RUNS SUCCESSFULLY BUT I THINK THE PROBABILITIES ARE OFF
+///////////
 
 public class EquityCalculator {
     private Card[] hand;
-// 	private String comparison;
+	private Card[] villain;
 	private List<Card> table;
+	private List<Card> table2;
 	private Map<Integer, Integer> counts;
 	private boolean pair;
+	private boolean twoPair;
 	private boolean set;
 	private boolean flush;
 	private boolean straight;
@@ -18,18 +19,25 @@ public class EquityCalculator {
 	private boolean quads;
 	private boolean straightFlush;
 	private boolean royalFlush;
+	
+	
+	public static final int TIMES = 1000000;
 	    
-    public EquityCalculator(Card[] hand) {
+    public EquityCalculator(Card[] hand, Card[] villain) {
 		this.hand = hand;
+		this.villain = villain;
 	}
 	
     public void preFlop() {
-        for (int i = 0; i < 10; i++) {
+		int totalWins = 0;
+        for (int i = 0; i < TIMES; i++) {
 			generateTable();
-			System.out.println(printTable());
+// 			System.out.println(printTable());
 			String highCard = checkHighCard();
 			int highestPair = checkPair();
 			pair = (highestPair != 0);
+			int[] highestTwoPair = checkTwoPair();
+			twoPair = (highestTwoPair[0] != 0 && highestTwoPair[1] != 0);
 			int highestSet = checkTrips();
 			set = (highestSet != 0);
 			int highestStraight = checkStraight();
@@ -43,7 +51,7 @@ public class EquityCalculator {
 			int highestStraightFlush = checkStraightFlush();
 			straightFlush = (highestStraightFlush != 0);
 			royalFlush = checkRoyalFlush();
-			boolean[] results = {pair, set, straight, flush, fullHouse,
+			boolean[] results = {pair, twoPair, set, straight, flush, fullHouse,
 								 quads, straightFlush, royalFlush};
 			int highestCombo = -1;
 			for (int j = results.length - 1; j > -1; j--) {
@@ -52,8 +60,71 @@ public class EquityCalculator {
 					break;
 				}
 			}
-			System.out.println(highestCombo);
+			for (Card card : hand) {
+				table.remove(card);
+			}
+			
+			
+			for (Card card : villain) {
+				table.add(card);
+			}
+			int highestPairV = checkPair();
+ 			pair = (highestPairV != 0);
+			int[] highestTwoPairV = checkTwoPair();
+			twoPair = (highestTwoPairV[0] != 0 && highestTwoPairV[1] != 0);
+			int highestSetV = checkTrips();
+			set = (highestSetV != 0);
+			int highestStraightV = checkStraight();
+			straight = (highestStraightV != 0);
+			int highestFlushV = checkFlush();
+			flush = (highestFlushV != 0);
+			int highestFullHouseV = checkFullHouse();
+			fullHouse = (highestFullHouseV != 0);
+			int highestQuadsV = checkQuads();
+			quads = (highestQuadsV != 0);
+			int highestStraightFlushV = checkStraightFlush();
+			straightFlush = (highestStraightFlushV != 0);
+			royalFlush = checkRoyalFlush();
+			boolean[] resultsV = {pair, twoPair, set, straight, flush, fullHouse,
+								  quads, straightFlush, royalFlush};
+			int highestComboV = -1;
+			for (int j = results.length - 1; j > -1; j--) {
+				if (results[j]) {
+					highestComboV = j;
+					break;
+				}
+			}
+			if (highestCombo > highestComboV) {
+				totalWins++;
+			} else if (highestCombo == highestComboV) {
+				if (highestCombo == 0 && highestPair > highestPairV) {
+					totalWins++;
+				} else if (highestCombo == 1) {
+					if (highestTwoPair[0] > highestTwoPairV[0]) {
+						totalWins++;
+					} else if (highestTwoPair[0] >= highestTwoPairV[0] &&
+							   highestTwoPair[1] > highestTwoPairV[1]) {
+						totalWins++;	   
+					}
+				} else if (highestCombo == 2 && highestSet > highestSetV) {
+					totalWins++;
+				} else if (highestCombo == 3 && highestStraight > highestStraightV) {
+					totalWins++;
+				} else if (highestCombo == 4 && highestFlush > highestFlushV) {
+					totalWins++;
+				} else if (highestCombo == 5 && highestFullHouse > highestFullHouseV) {
+					totalWins++;
+				} else if (highestCombo == 6 && highestQuads > highestQuadsV) {
+					totalWins++;
+				} else if (highestCombo == 7 && highestStraightFlush > highestStraightFlushV) {
+					totalWins++;
+				}
+			}
 		}
+		System.out.println(totalWins);
+		double winningPercentage = ((totalWins * 1.0) / TIMES) * 100;
+		System.out.println("DONE\n\n\n");
+		System.out.println(winningPercentage);
     }
 	
 	private void generateTable() {	
@@ -66,9 +137,17 @@ public class EquityCalculator {
 			int num = rand.nextInt(13) + 1;
 			int suit = rand.nextInt(4);
 			Card card = new Card(num, suit);
-			if (!table.contains(card)) {
-				table.add(card);
+			boolean shouldAdd = true;
+			for (Card card2 : table) {
+				if ((card.num == card2.num && card.suit == card2.suit) || 
+					(card.num == villain[0].num && card.suit == villain[0].suit) ||
+					(card.num == villain[1].num && card.suit == villain[1].suit)) {
+					shouldAdd = false;				
+				}
 			}
+			if (shouldAdd) {
+				table.add(card);
+			}	
 		}
 		Collections.sort(table);
 	}
@@ -94,11 +173,39 @@ public class EquityCalculator {
 		return highestPair;
 	}
 	
+	private int[] checkTwoPair() {
+		int[] result = new int[2];
+		if (pair) {
+			int highestFirst = 0;
+			int highestSecond = 0;
+			List<Integer> allPairs = new ArrayList<>();
+			for (int num : counts.keySet()) {
+				if (counts.get(num) >= 2) {
+					allPairs.add(num);
+				}
+			}
+			if (allPairs.size() >= 2) {
+				highestFirst = Math.max(allPairs.get(0), allPairs.get(1));
+				for (int i = 1; i < allPairs.size(); i++) {
+					highestFirst = Math.max(allPairs.get(i), highestFirst);
+					if (allPairs.get(i - 1) != highestFirst) {
+						highestSecond = Math.max(allPairs.get(i - 1), highestSecond);
+					}
+				}
+				result[0] = highestFirst;
+				result[1] = highestSecond;
+			}
+		}
+		return result;	
+	}
+	
 	private int checkTrips() {
 		int highestTrips = 0;
-		for (int num : counts.keySet()) {
-			if (counts.get(num) >= 3) {
-				highestTrips = num;
+		if (pair) {
+			for (int num : counts.keySet()) {
+				if (counts.get(num) >= 3) {
+					highestTrips = num;
+				}
 			}
 		}
 		return highestTrips;
@@ -149,9 +256,11 @@ public class EquityCalculator {
 		
 	private int checkQuads() {
 		int highestQuads = 0;
-		for (int num : counts.keySet()) {
-			if (counts.get(num) == 4) {
-				highestQuads = num;
+		if (set) {
+			for (int num : counts.keySet()) {
+				if (counts.get(num) == 4) {
+					highestQuads = num;
+				}
 			}
 		}
 		return highestQuads;
@@ -171,7 +280,7 @@ public class EquityCalculator {
 				}
 			}
 			if (isStraight && isFlush) {
-				highestStraightFlush = Math.max(highestStraightFlush, table.get(i + 5).num);
+				highestStraightFlush = Math.max(highestStraightFlush, table.get(i + 4).num);
 			}
 		}
 		return highestStraightFlush;
@@ -186,12 +295,12 @@ public class EquityCalculator {
 		for (Card card : table) {
 			boolean matchesHand = false;
 			for (Card card2 : hand) {
-				if (card.compareTo(card2) == 0) {
+				if (card.num == card2.num && card.suit == card2.suit) {
 					matchesHand = true;
 				}
 			}
 			if (!matchesHand) {
-				result += card.num + " ";
+				result += card.toString() + " ";
 			}
 		}
 		return result;
