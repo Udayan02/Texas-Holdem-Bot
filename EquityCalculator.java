@@ -1,139 +1,199 @@
 import java.util.*;
 
 
-
-// CODE WILL NOT WORK RIGHT NOW!!!
-// A FEW METHODS ARE INCOMPLPETE!!
-///////////////////////////////////////////////////////////
-//EDITS OR PUSHES WILL BE MADE EVERY 1-2 DAYS (HOPEFULLY)/
-//////////////////////////////////////////////////////////
-
+/////////
+// THIS VERSION COMPILES BUT RUNS WITH A FEW BUGS
+////////
 
 public class EquityCalculator {
-    private Map<Integer, String> hand;
-	private String comparison;
-	private Map<Integer, String> table;
-	private List<Integer> cards = new ArrayList<>();
-	private boolean highCard;
+    private Card[] hand;
+// 	private String comparison;
+	private List<Card> table;
+	private Map<Integer, Integer> counts;
 	private boolean pair;
-	private boolean trips;
+	private boolean set;
 	private boolean flush;
 	private boolean straight;
+	private boolean fullHouse;
 	private boolean quads;
-	
-    
-	public final const String[] suits = {"H", "C", "S", "D"};
-    
-    
-    public double preFlop() {
-        // Check Royal Flush:
-		// If 
-    }
-	
-	private Set<String> generateTable() {
-		table = new TreeMap<>();
-		for (int card : hand.keySet()) {
-			table.put(card, hand.get(card));
-		}
-		Random rand = new Random();
-		while (table.size() < 5) {
-			int num = rand.nextInt(13) + 1;
-			int suit = rand.nextInt(4);
-			if (!table.containsKey(num)) {
-				table.put(num, suits[suit]);
-			} else {
-				if (table.get(num) != suits[suit]) {
-					table.put(num, suits[suit]);
-				}
-			}
-		}
-		if (table.size() > 7) {
-			throw new IllegalArgumentException("table bigger than 7??");
-		}
-		return table;
+	private boolean straightFlush;
+	private boolean royalFlush;
+	    
+    public EquityCalculator(Card[] hand) {
+		this.hand = hand;
 	}
 	
-	private String getCardSymbol(int cardNum) {
-		if (cardNum == 14) return "A";
-		else if (cardNum == 13) return "K";
-		else if (cardNum == 12) return "Q";
-		else if (cardNum == 11) return "J";
-		else if (cardNum == 10) return "T";
-		return "" + cardNum;
+    public void preFlop() {
+        for (int i = 0; i < 10; i++) {
+			generateTable();
+			System.out.println(printTable());
+			String highCard = checkHighCard();
+			int highestPair = checkPair();
+			pair = (highestPair != 0);
+			int highestSet = checkTrips();
+			set = (highestSet != 0);
+			int highestStraight = checkStraight();
+			straight = (highestStraight != 0);
+			int highestFlush = checkFlush();
+			flush = (highestFlush != 0);
+			int highestFullHouse = checkFullHouse();
+			fullHouse = (highestFullHouse != 0);
+			int highestQuads = checkQuads();
+			quads = (highestQuads != 0);
+			int highestStraightFlush = checkStraightFlush();
+			straightFlush = (highestStraightFlush != 0);
+			royalFlush = checkRoyalFlush();
+			boolean[] results = {pair, set, straight, flush, fullHouse,
+								 quads, straightFlush, royalFlush};
+			int highestCombo = -1;
+			for (int j = results.length - 1; j > -1; j--) {
+				if (results[j]) {
+					highestCombo = j;
+					break;
+				}
+			}
+			System.out.println(highestCombo);
+		}
+    }
+	
+	private void generateTable() {	
+		table = new ArrayList<>();
+		Random rand = new Random();
+		for (Card card : hand) {
+			table.add(card);
+		}
+		while (table.size() < 7) {
+			int num = rand.nextInt(13) + 1;
+			int suit = rand.nextInt(4);
+			Card card = new Card(num, suit);
+			if (!table.contains(card)) {
+				table.add(card);
+			}
+		}
+		Collections.sort(table);
 	}
 	
 	private String checkHighCard() {
-		cards = new ArrayList<>();
-		String highCard = "";
-		for (int card : table.keySet()) {
-			cards.add(card);
-			highCard = generateCardSymbol(card) + ;
-		}
-		return Math.max(cards)
-	}
-		
-	private boolean checkRoyalFlush() {
-		for 
+		return table.get(table.size() - 1).getCardSymbol();
 	}
 	
-	private boolean checkStraight() {
-		List<Integer> cards = new ArrayList<>();
-		for (int card : table.keySet()) {
-			cards.add(card);
+	private int checkPair() {
+		counts = new TreeMap<>();
+		int highestPair = 0;
+		for (Card card : table) {
+			if (!counts.containsKey(card.num)) {
+				counts.put(card.num, 0);
+			}
+			counts.put(card.num, counts.get(card.num) + 1);
 		}
-		boolean isStraight = false;
+		for (int num : counts.keySet()) {
+			if (counts.get(num) >= 2) {
+				highestPair = num;
+			}
+		}
+		return highestPair;
+	}
+	
+	private int checkTrips() {
+		int highestTrips = 0;
+		for (int num : counts.keySet()) {
+			if (counts.get(num) >= 3) {
+				highestTrips = num;
+			}
+		}
+		return highestTrips;
+	}
+
+
+	private int checkStraight() {
+		int highestStraight = 0;
 		for (int i = 0; i < 3; i++) {
 			boolean isStraightNested = true;
 			for (int j = i + 1; j < i + 5; j++) {
-				if (cards.get(j) != cards.get(j - 1) + 1) {
+				if (table.get(j).num != table.get(j - 1).num + 1) {
 					isStraightNested = false;
 				}
 			}
 			if (isStraightNested) {
-				isStraight = true;
-				break;
+				highestStraight = Math.max(highestStraight, table.get(i + 4).num);
 			}
 		}
-		return isStraight;
+		return highestStraight;
 	}
 	
-	private boolean checkFlush() {
-		Map<String, Integer> suits = new HashMap<>();
-		for (int card : table.keySet()) {
-			if (!suits.containsKey(suit)) {
-				suits.put(suit, 0);
+	private int checkFlush() {
+		Map<Character, Integer> suits = new HashMap<>();
+		for (Card card : table) {
+			if (!suits.containsKey(card.suit)) {
+				suits.put(card.suit, 0);
 			}
-			suits.put(suit, suits.get(suit) + 1);
-			if (suits.get(suit) >= 5) {
-				return true;
+			suits.put(card.suit, suits.get(card.suit) + 1);
+		}
+		for (int i = table.size() - 1; i > -1; i--) {
+			if (suits.get(table.get(i).suit) >= 5) {
+				return table.get(i).num;
 			}
 		}
-		return false;
+		return 0;
 	}
 	
-	private boolean checkPair() {
-		List<Integer> cards = new ArrayList<>();
-		for (int card : table.keySet()) {
-			if (card == cards.get(cards.length() - 1)) {
-				return true;
+	private int checkFullHouse() {
+		int highestFull = 0;
+		int pair = checkPair();
+		int set = checkTrips();
+		if (pair != set && pair != 0 && set != 0) {
+			highestFull = set;
+		}
+		return highestFull;
+	}
+		
+	private int checkQuads() {
+		int highestQuads = 0;
+		for (int num : counts.keySet()) {
+			if (counts.get(num) == 4) {
+				highestQuads = num;
 			}
-			cards.add(card);
 		}
-		return false;
+		return highestQuads;
+	}
+
+	private int checkStraightFlush() {
+		int highestStraightFlush = 0;
+		for (int i = 0; i < 3; i++) {
+			boolean isStraight = true;
+			boolean isFlush = true;
+			for (int j = i + 1; j < i + 5; j++) {
+				if (table.get(j).num != table.get(j - 1).num + 1) {
+					isStraight = false;
+				}
+				if (table.get(j).suit != table.get(j - 1).suit) {
+					isFlush = false;
+				}
+			}
+			if (isStraight && isFlush) {
+				highestStraightFlush = Math.max(highestStraightFlush, table.get(i + 5).num);
+			}
+		}
+		return highestStraightFlush;
 	}
 	
-	private boolean checkTrips() {
-		if (checkPair) {
-			List<Integer> cards = new ArrayList<>();
-			for (int card : table.keySet()) {
-				cards.add(card);
-			} 
-		}
+	private boolean checkRoyalFlush() {
+		return checkStraightFlush() == 14;
 	}
 	
-	private boolean checkStraightFlush() {
-		if (checkFlush() && checkStraight()) {
-			
+	private String printTable() {
+		String result = "";
+		for (Card card : table) {
+			boolean matchesHand = false;
+			for (Card card2 : hand) {
+				if (card.compareTo(card2) == 0) {
+					matchesHand = true;
+				}
+			}
+			if (!matchesHand) {
+				result += card.num + " ";
+			}
 		}
+		return result;
 	}
 }
