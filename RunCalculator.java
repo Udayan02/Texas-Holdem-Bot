@@ -1,3 +1,10 @@
+// GUIDE:
+// 	-> Look at Card.java for constructor details.
+// 	-> enter a card as (num, <int for suit>)
+// 	-> Legend: [0, 1, 2, 3] === [Clubs, Diamonds, Spades, Hearts] === ['C', 'D', 'S', 'H']
+// 	-> Cards1 and Cards2 are our hole cards
+// 	-> Cards3 and Cards4 are the villain's hole cards
+
 public class RunCalculator {
 	public static void main(String[] args) {
 		Card card1 = new Card(5, 2);
@@ -10,7 +17,5 @@ public class RunCalculator {
 		Card[] villain = {card3, card4};
 		EquityCalculator calc = new EquityCalculator(hand, villain);
 		calc.preFlop();
-// 		List<String> nw = new ArrayList<>();
-// 		System.out.println(Collections.max(nw));
 	}
 }
