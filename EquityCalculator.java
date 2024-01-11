@@ -1,5 +1,14 @@
 import java.util.*;
 
+
+
+// CODE WILL NOT WORK RIGHT NOW!!!
+// A FEW METHODS ARE INCOMPLPETE!!
+///////////////////////////////////////////////////////////
+//EDITS OR PUSHES WILL BE MADE EVERY 1-2 DAYS (HOPEFULLY)/
+//////////////////////////////////////////////////////////
+
+
 public class EquityCalculator {
     private Map<Integer, String> hand;
 	private String comparison;
