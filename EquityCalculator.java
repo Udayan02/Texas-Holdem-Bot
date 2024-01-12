@@ -1,7 +1,12 @@
 import java.util.*;
 
-///////////
-// CODE RUNS SUCCESSFULLY BUT I THINK THE PROBABILITIES ARE OFF
+/////////////
+// CALCULATOR WORKS WITH A ~2% MARGIN OF ERROR FOR HANDS WHERE THERE IS A CLEAR WINNER
+// SOMEHOW FAILS ON HANDS WHERE THE WINNING MARGIN IS BLURRED / TOUGH TO DECIDE A CLEAR WINNER
+/////////////
+
+////////////
+// REALLY NEED TO OPTIMIZE: TAKING ~3 seconds FOR 2 MILLION SIMULATIONS TO WORK
 ///////////
 
 public class EquityCalculator {
@@ -21,7 +26,7 @@ public class EquityCalculator {
 	private boolean royalFlush;
 	
 	
-	public static final int TIMES = 1000000;
+	public static final int TIMES = 2000000;
 	    
     public EquityCalculator(Card[] hand, Card[] villain) {
 		this.hand = hand;
@@ -63,7 +68,7 @@ public class EquityCalculator {
 			for (Card card : hand) {
 				table.remove(card);
 			}
-			
+// 			System.out.println(highestCombo);
 			
 			for (Card card : villain) {
 				table.add(card);
@@ -88,12 +93,13 @@ public class EquityCalculator {
 			boolean[] resultsV = {pair, twoPair, set, straight, flush, fullHouse,
 								  quads, straightFlush, royalFlush};
 			int highestComboV = -1;
-			for (int j = results.length - 1; j > -1; j--) {
-				if (results[j]) {
+			for (int j = resultsV.length - 1; j > -1; j--) {
+				if (resultsV[j]) {
 					highestComboV = j;
 					break;
 				}
 			}
+// 			System.out.println(highestComboV);
 			if (highestCombo > highestComboV) {
 				totalWins++;
 			} else if (highestCombo == highestComboV) {
@@ -107,6 +113,8 @@ public class EquityCalculator {
 						totalWins++;	   
 					}
 				} else if (highestCombo == 2 && highestSet > highestSetV) {
+// 					System.out.println(highestSet + " " + highestSetV);
+// 					System.out.println(set);
 					totalWins++;
 				} else if (highestCombo == 3 && highestStraight > highestStraightV) {
 					totalWins++;
@@ -121,7 +129,6 @@ public class EquityCalculator {
 				}
 			}
 		}
-		System.out.println(totalWins);
 		double winningPercentage = ((totalWins * 1.0) / TIMES) * 100;
 		System.out.println("DONE\n\n\n");
 		System.out.println(winningPercentage);
@@ -175,37 +182,33 @@ public class EquityCalculator {
 	
 	private int[] checkTwoPair() {
 		int[] result = new int[2];
-		if (pair) {
-			int highestFirst = 0;
-			int highestSecond = 0;
-			List<Integer> allPairs = new ArrayList<>();
-			for (int num : counts.keySet()) {
-				if (counts.get(num) >= 2) {
-					allPairs.add(num);
+		int highestFirst = 0;
+		int highestSecond = 0;
+		List<Integer> allPairs = new ArrayList<>();
+		for (int num : counts.keySet()) {
+			if (counts.get(num) >= 2) {
+				allPairs.add(num);
+			}
+		}
+		if (allPairs.size() >= 2) {
+			highestFirst = Math.max(allPairs.get(0), allPairs.get(1));
+			for (int i = 1; i < allPairs.size(); i++) {
+				highestFirst = Math.max(allPairs.get(i), highestFirst);
+				if (allPairs.get(i - 1) != highestFirst) {
+					highestSecond = Math.max(allPairs.get(i - 1), highestSecond);
 				}
 			}
-			if (allPairs.size() >= 2) {
-				highestFirst = Math.max(allPairs.get(0), allPairs.get(1));
-				for (int i = 1; i < allPairs.size(); i++) {
-					highestFirst = Math.max(allPairs.get(i), highestFirst);
-					if (allPairs.get(i - 1) != highestFirst) {
-						highestSecond = Math.max(allPairs.get(i - 1), highestSecond);
-					}
-				}
-				result[0] = highestFirst;
-				result[1] = highestSecond;
-			}
+			result[0] = highestFirst;
+			result[1] = highestSecond;
 		}
 		return result;	
 	}
 	
 	private int checkTrips() {
 		int highestTrips = 0;
-		if (pair) {
-			for (int num : counts.keySet()) {
-				if (counts.get(num) >= 3) {
-					highestTrips = num;
-				}
+		for (int num : counts.keySet()) {
+			if (counts.get(num) >= 3) {
+				highestTrips = num;
 			}
 		}
 		return highestTrips;
@@ -256,11 +259,9 @@ public class EquityCalculator {
 		
 	private int checkQuads() {
 		int highestQuads = 0;
-		if (set) {
-			for (int num : counts.keySet()) {
-				if (counts.get(num) == 4) {
-					highestQuads = num;
-				}
+		for (int num : counts.keySet()) {
+			if (counts.get(num) == 4) {
+				highestQuads = num;
 			}
 		}
 		return highestQuads;
