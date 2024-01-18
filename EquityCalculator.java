@@ -1,13 +1,12 @@
 import java.util.*;
 
-/////////////
-// CALCULATOR WORKS WITH A ~2% MARGIN OF ERROR FOR HANDS WHERE THERE IS A CLEAR WINNER
-// SOMEHOW FAILS ON HANDS WHERE THE WINNING MARGIN IS BLURRED / TOUGH TO DECIDE A CLEAR WINNER
-/////////////
+///////////////////
+// WORKS WITH AN ERROR MARGIN OF 2.5% AT MAX
+//////////////////
 
-////////////
-// REALLY NEED TO OPTIMIZE: TAKING ~3 seconds FOR 2 MILLION SIMULATIONS TO WORK
-///////////
+//////////////////
+// NEXT TASK IS TO OPTIMIZE AND INCLUDE STAGES OF THE GAME
+//////////////////
 
 public class EquityCalculator {
     private Card[] hand;
@@ -24,9 +23,18 @@ public class EquityCalculator {
 	private boolean quads;
 	private boolean straightFlush;
 	private boolean royalFlush;
+	private int totalPairs;
+	private int totalTwoPairs;
+	private int totalSets;
+	private int totalStraights;
+	private int totalFlushes;
+	private int totalFullHouses;
+	private int totalQuads;
+	private int totalStraightFlushes;
+	private int totalRoyalFlushes;
 	
 	
-	public static final int TIMES = 2000000;
+	public static final int TIMES = 200000;
 	    
     public EquityCalculator(Card[] hand, Card[] villain) {
 		this.hand = hand;
@@ -35,10 +43,14 @@ public class EquityCalculator {
 	
     public void preFlop() {
 		int totalWins = 0;
+		int totalTies = 0;
         for (int i = 0; i < TIMES; i++) {
 			generateTable();
-// 			System.out.println(printTable());
-			String highCard = checkHighCard();
+			boolean win = false;
+			boolean tie = false;
+// 			System.out.println("\n" + printTable());
+			int highestCard = checkHighCard()[0];
+			int secondHighestCard = checkHighCard()[1];
 			int highestPair = checkPair();
 			pair = (highestPair != 0);
 			int[] highestTwoPair = checkTwoPair();
@@ -49,8 +61,8 @@ public class EquityCalculator {
 			straight = (highestStraight != 0);
 			int highestFlush = checkFlush();
 			flush = (highestFlush != 0);
-			int highestFullHouse = checkFullHouse();
-			fullHouse = (highestFullHouse != 0);
+			int[] highestFullHouse = checkFullHouse();
+			fullHouse = (highestFullHouse[0] != 0);
 			int highestQuads = checkQuads();
 			quads = (highestQuads != 0);
 			int highestStraightFlush = checkStraightFlush();
@@ -58,6 +70,8 @@ public class EquityCalculator {
 			royalFlush = checkRoyalFlush();
 			boolean[] results = {pair, twoPair, set, straight, flush, fullHouse,
 								 quads, straightFlush, royalFlush};
+		 	String[] results_names = {"pair", "twoPair", "set", "straight", "flush",
+									  "fullHouse", "quads", "straightFlush", "royalFlush"};
 			int highestCombo = -1;
 			for (int j = results.length - 1; j > -1; j--) {
 				if (results[j]) {
@@ -68,11 +82,19 @@ public class EquityCalculator {
 			for (Card card : hand) {
 				table.remove(card);
 			}
-// 			System.out.println(highestCombo);
+			if (highestCombo == -1) {
+// 				System.out.println("We got: highCard" + highestCard);
+			} else {
+// 				System.out.println("We got: " + results_names[highestCombo]);
+			}
 			
 			for (Card card : villain) {
 				table.add(card);
 			}
+			Collections.sort(table);
+// 			System.out.println(printTable());
+			int highestCardV = checkHighCard()[0];
+			int secondHighestCardV = checkHighCard()[1];
 			int highestPairV = checkPair();
  			pair = (highestPairV != 0);
 			int[] highestTwoPairV = checkTwoPair();
@@ -83,8 +105,8 @@ public class EquityCalculator {
 			straight = (highestStraightV != 0);
 			int highestFlushV = checkFlush();
 			flush = (highestFlushV != 0);
-			int highestFullHouseV = checkFullHouse();
-			fullHouse = (highestFullHouseV != 0);
+			int[] highestFullHouseV = checkFullHouse();
+			fullHouse = (highestFullHouseV[0] != 0);
 			int highestQuadsV = checkQuads();
 			quads = (highestQuadsV != 0);
 			int highestStraightFlushV = checkStraightFlush();
@@ -99,39 +121,174 @@ public class EquityCalculator {
 					break;
 				}
 			}
-// 			System.out.println(highestComboV);
+// 			if (highestComboV == -1) {
+// 				System.out.println("Villain got: highCard" + highestCardV);
+// 			} else {
+// 				System.out.println("Villain got: " + results_names[highestComboV]);
+// 			}
 			if (highestCombo > highestComboV) {
-				totalWins++;
+				win = true;
 			} else if (highestCombo == highestComboV) {
-				if (highestCombo == 0 && highestPair > highestPairV) {
-					totalWins++;
+				if (highestCombo == -1) {
+					if (hand[1].num > villain[1].num) {
+						win = true;
+					} else if (hand[1].num == villain[1].num) {
+						if (hand[0].num > villain[0].num) {
+							win = true;
+						} else if (hand[0].num == villain[0].num) {
+							tie = true;
+						}
+					}
+				} else if (highestCombo == 0 && highestPair >= highestPairV) {
+// 					System.out.println("Our pair: " + highestPair + "  Villain Pair: " + highestPairV);
+					if (highestPair == highestPairV) {
+						if (hand[1].num > villain[1].num) {
+							win = true;
+						} else if (hand[1].num == villain[1].num) {
+							if (hand[0].num > villain[0].num) {
+								win = true;
+							} else if (hand[0].num == villain[0].num) {
+								tie = true;
+							}
+						}
+					} else if (highestPair > highestPairV) {
+						win = true;
+					}
 				} else if (highestCombo == 1) {
 					if (highestTwoPair[0] > highestTwoPairV[0]) {
-						totalWins++;
-					} else if (highestTwoPair[0] >= highestTwoPairV[0] &&
-							   highestTwoPair[1] > highestTwoPairV[1]) {
-						totalWins++;	   
+						win = true;
+					} else if (highestTwoPair[0] == highestTwoPairV[0]) {
+						if (highestTwoPair[1] > highestTwoPairV[1]) {
+							win = true; 
+						} else if (highestTwoPair[1] == highestTwoPairV[1]) {
+							if (hand[1].num > villain[1].num) {
+								win = true;
+							} else if (hand[1].num == villain[1].num) {
+								if (hand[0].num > villain[0].num) {
+									win = true;
+								} else if (hand[0].num == villain[0].num) {
+									tie = true;
+								}
+							}
+						}
 					}
-				} else if (highestCombo == 2 && highestSet > highestSetV) {
-// 					System.out.println(highestSet + " " + highestSetV);
-// 					System.out.println(set);
-					totalWins++;
-				} else if (highestCombo == 3 && highestStraight > highestStraightV) {
-					totalWins++;
-				} else if (highestCombo == 4 && highestFlush > highestFlushV) {
-					totalWins++;
-				} else if (highestCombo == 5 && highestFullHouse > highestFullHouseV) {
-					totalWins++;
-				} else if (highestCombo == 6 && highestQuads > highestQuadsV) {
-					totalWins++;
-				} else if (highestCombo == 7 && highestStraightFlush > highestStraightFlushV) {
-					totalWins++;
+				} else if (highestCombo == 2) {
+					if (highestSet > highestSetV) {
+						win = true;
+					} else if (highestSet == highestSetV) {
+						if (hand[1].num > villain[1].num) {
+							win = true;
+						} else if (hand[1].num == villain[1].num) {
+							if (hand[0].num > villain[0].num) {
+								win = true;
+							} else if (hand[0].num == villain[0].num) {
+								tie = true;
+							}
+						}
+					}
+				} else if (highestCombo == 3) {
+					if (highestStraight > highestStraightV) {
+						win = true;
+					} else if (highestStraight == highestStraightV) {
+						if (hand[1].num > villain[1].num) {
+							win = true;
+						} else if (hand[1].num == villain[1].num) {
+							if (hand[0].num > villain[0].num) {
+								win = true;
+							} else if (hand[0].num == villain[0].num) {
+								tie = true;
+							}
+						}
+					}
+				} else if (highestCombo == 4) {
+					if (highestFlush > highestFlushV) {
+						win = true;
+					} else if (highestFlush == highestFlushV) {
+						if (hand[1].num > villain[1].num) {
+							win = true;
+						} else if (hand[1].num == villain[1].num) {
+							if (hand[0].num > villain[0].num) {
+								win = true;
+							} else if (hand[0].num == villain[0].num) {
+								tie = true;
+							}
+						}
+					}
+				} else if (highestCombo == 5) {
+					if (highestFullHouse[0] > highestFullHouseV[0]) {
+						win = true;
+					} else if (highestFullHouse[0] == highestFullHouseV[0]) {
+						if (highestFullHouse[1] > highestFullHouseV[1]) {
+							win = true;
+						} else if (highestFullHouse[1] == highestFullHouseV[1]) {
+							if (hand[1].num > villain[1].num) {
+								win = true;
+							} else if (hand[1].num == villain[1].num) {
+								if (hand[0].num > villain[0].num) {
+									win = true;
+								} else if (hand[0].num == villain[0].num) {
+									tie = true;
+								}
+							}
+						}
+					}
+				} else if (highestCombo == 6) {
+					if (highestQuads > highestQuadsV) {
+						win = true;
+					} else if (highestQuads == highestQuadsV) {
+						if (hand[1].num > villain[1].num) {
+							win = true;
+						} else if (hand[1].num == villain[1].num) {
+							if (hand[0].num > villain[0].num) {
+								win = true;
+							} else if (hand[0].num == villain[0].num) {
+								tie = true;
+							}
+						}
+					}
+				} else if (highestCombo == 7) {
+					if (highestStraightFlush > highestStraightFlushV) {
+						win = true;
+					} else if (highestStraightFlush == highestStraightFlushV) {
+						if (hand[1].num > villain[1].num) {
+							win = true;
+						} else if (hand[1].num == villain[1].num) {
+							if (hand[0].num > villain[0].num) {
+								win = true;
+							} else if (hand[0].num == villain[0].num) {
+								tie = true;
+							}
+						}
+					}
+					System.out.println("Straight Flush detected");
+				} else if (highestCombo == 8) {
+					if (hand[1].num > villain[1].num) {
+						win = true;
+					} else if (hand[1].num == villain[1].num) {
+						if (hand[0].num > villain[0].num) {
+							win = true;
+						} else if (hand[0].num == villain[0].num) {
+							tie = true;
+						}
+					}
+					System.out.println("ROYAL FU*KIN FLUSH!!!!!!");
 				}
+			}
+			if (win) {
+				totalWins++;
+// 				System.out.println("We WIN!!");
+			} else if (tie) {
+				totalTies++;
+// 				System.out.println("We CHOP!!");
+			} else {
+// 				System.out.println("We LOSE D:");
 			}
 		}
 		double winningPercentage = ((totalWins * 1.0) / TIMES) * 100;
-		System.out.println("DONE\n\n\n");
-		System.out.println(winningPercentage);
+		double tiePercentage = ((totalTies * 1.0) / TIMES) * 100;
+// 		System.out.println("DONE\n\n\n");
+		System.out.println("\nWe win " + winningPercentage + "% of the times!");
+// 		System.out.println(tiePercentage);
     }
 	
 	private void generateTable() {	
@@ -159,8 +316,9 @@ public class EquityCalculator {
 		Collections.sort(table);
 	}
 	
-	private String checkHighCard() {
-		return table.get(table.size() - 1).getCardSymbol();
+	private int[] checkHighCard() {
+		int[] result = {table.get(table.size() - 1).num, table.get(table.size() - 2).num};
+		return result;
 	}
 	
 	private int checkPair() {
@@ -173,8 +331,8 @@ public class EquityCalculator {
 			counts.put(card.num, counts.get(card.num) + 1);
 		}
 		for (int num : counts.keySet()) {
-			if (counts.get(num) >= 2) {
-				highestPair = num;
+			if (counts.get(num) == 2) {
+				highestPair = Math.max(num, highestPair);
 			}
 		}
 		return highestPair;
@@ -207,8 +365,8 @@ public class EquityCalculator {
 	private int checkTrips() {
 		int highestTrips = 0;
 		for (int num : counts.keySet()) {
-			if (counts.get(num) >= 3) {
-				highestTrips = num;
+			if (counts.get(num) == 3) {
+				highestTrips = Math.max(highestTrips, num);
 			}
 		}
 		return highestTrips;
@@ -247,13 +405,14 @@ public class EquityCalculator {
 		return 0;
 	}
 	
-	private int checkFullHouse() {
-		int highestFull = 0;
+	private int[] checkFullHouse() {
+		int[] highestFull = new int[2];
 		int pair = checkPair();
 		int set = checkTrips();
-		if (pair != set && pair != 0 && set != 0) {
-			highestFull = set;
-		}
+// 		if (pair != set && pair != 0 && set != 0) {
+			highestFull[0] = set;
+			highestFull[1] = pair;
+// 		}
 		return highestFull;
 	}
 		
@@ -295,11 +454,11 @@ public class EquityCalculator {
 		String result = "";
 		for (Card card : table) {
 			boolean matchesHand = false;
-			for (Card card2 : hand) {
-				if (card.num == card2.num && card.suit == card2.suit) {
-					matchesHand = true;
-				}
-			}
+			// for (Card card2 : hand) {
+// 				if (card.num == card2.num && card.suit == card2.suit) {
+// 					matchesHand = true;
+// 				}
+// 			}
 			if (!matchesHand) {
 				result += card.toString() + " ";
 			}
